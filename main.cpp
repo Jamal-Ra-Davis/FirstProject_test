@@ -134,6 +134,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	else if (fov > 45.0f)
 		fov = 45.0f;
 }
+bool mousePressed = false;
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		mousePressed = (action == GLFW_PRESS);
+		printf("Mouse pressed: %d", mousePressed);
+	}
+}
 
 void test_vectors()
 {
@@ -353,7 +361,7 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
 	{
