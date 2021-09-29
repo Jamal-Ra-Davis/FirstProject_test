@@ -347,6 +347,22 @@ int main()
 		// render the cube
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+		for (int i = 0; i < 8; i++) {
+			const float rad = 6.0f;
+			float angle = (i * 360.0f) / 8.0f;
+			
+			float camX_ = sin(glm::radians(angle)) * rad;
+			float camZ_ = cos(glm::radians(angle)) * rad;
+			glm::vec3 ledPos(camX_, 2.0f, camZ_);
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, ledPos);
+			model = glm::scale(model, glm::vec3(0.2f));
+			lightingShader.setMat4("model", model);
+			glBindVertexArray(cubeVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		
 
 		// also draw the lamp object
