@@ -19,7 +19,7 @@
 
 using namespace std;
 
-#define USE_WIREFRAME true
+#define USE_WIREFRAME false
 
 unsigned int TextureFromFile(const char* path, const string& directory);
 struct Vertex {
@@ -403,6 +403,51 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 
+
+float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+};
+
 int main()
 {
 	printf("Hello World\n");
@@ -444,14 +489,10 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffser_size_callback);
 
 	Shader ourShader("model_loading.vs", "model_loading.fs");
-	const char* hardcode_path = "C:\\Users\\Jamal\\Documents\\Programming\\OpenGL\\Learn_OpenGL\\FirstProject\\FirstProject\\resources\\backpack\\backpack.obj";
 	//string path_str = FileSystem::getPath("resources\\backpack\\backpack.obj"); 
-	//string path_str = FileSystem::getPath("resources/backpack/backpack.obj");
-	//string path_str = FileSystem::getPath("auger.obj");
 	string path_str0 = FileSystem::getPath("enclosure_body.stl");
 	string path_str1 = FileSystem::getPath("enclosure_base.stl");
 	string path_str2 = FileSystem::getPath("enclosuer_top.stl");
-	//const char* path = FileSystem::getPath("resources/objects/backpack/backpack.obj").c_str();//FileSystem::getPath("resources\\objects\\backpack\\backpack.obj").c_str();
 	cout << "Cout: " << path_str2.c_str() << endl;
 	printf("Path: %s\n", path_str2.c_str());
 
@@ -463,6 +504,23 @@ int main()
 	//Model ourModel((char*)path_str0.c_str());
 	cout << "Models loaded" << endl;
 	
+	//Light cube
+	glm::vec3 lightPos(20.0f, 15.0f, 2.0f);
+	Shader lightCubeShader("light_cube.vs", "light_cube.fs");
+	unsigned int VBO, lightCubeVAO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &lightCubeVAO);
+	glBindVertexArray(lightCubeVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// note that we update the lamp's position attribute's stride to reflect the updated buffer data
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
@@ -474,7 +532,24 @@ int main()
 		glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+
+		//Draw Models
 		ourShader.use();
+
+		ourShader.setVec3("light.position", lightPos);
+		ourShader.setVec3("viewPos", cameraPos);
+
+		// light properties
+		ourShader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f); // note that all light colors are set at full intensity
+		ourShader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+		ourShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+		// material properties
+		ourShader.setVec3("material.ambient", 0.0f, 0.1f, 0.06f);
+		ourShader.setVec3("material.diffuse", 0.0f, 0.50980392f, 0.50980392f);
+		ourShader.setVec3("material.specular", 0.50196078f, 0.50196078f, 0.50196078f);
+		ourShader.setFloat("material.shininess", 32.0f);
+
 		glm::mat4 projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
@@ -505,6 +580,18 @@ int main()
 				enclosure_models[i].Draw(ourShader);
 			}
 		}
+
+		//Draw Light cube
+		lightCubeShader.use();
+		lightCubeShader.setMat4("projection", projection);
+		lightCubeShader.setMat4("view", view);
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+		lightCubeShader.setMat4("model", model);
+
+		glBindVertexArray(lightCubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 
 		glfwSwapBuffers(window);
