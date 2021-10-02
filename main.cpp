@@ -307,10 +307,10 @@ glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-
+glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 void processInput(GLFWwindow* window)
 {
-	const float cameraSpeed = 5.0f * deltaTime;
+	const float cameraSpeed = 20.0f * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
 	{
 		glfwSetWindowShouldClose(window, true);
@@ -332,6 +332,35 @@ void processInput(GLFWwindow* window)
 	{
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		lightPos.z += 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		lightPos.z -= 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	{
+		lightPos.x += 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	{
+		lightPos.x -= 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
+	{
+		lightPos.y += 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS)
+	{
+		lightPos.y -= 0.5;
+	}
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+	{
+		printf("Light pos: (%f, %f, %f)\n", lightPos.x, lightPos.y, lightPos.z);
+	}
+	
 }
 
 float lastX = 400, lastY = 300;
@@ -505,8 +534,10 @@ int main()
 	cout << "Models loaded" << endl;
 	
 	//Light cube
-	glm::vec3 lightPos(20.0f, 15.0f, 2.0f);
+	//glm::vec3 lightPos(20.0f, 15.0f, 2.0f);
+	
 	Shader lightCubeShader("light_cube.vs", "light_cube.fs");
+	Shader ledShader("light_cube.vs", "led_shader.fs");
 	unsigned int VBO, lightCubeVAO;
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -520,7 +551,22 @@ int main()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
+	glm::vec3 frame_buffer[96][8][6] = { glm::vec3(0.0f) };
 
+	for (int i = 0; i < 96; i++) 
+	{
+		if (i % 6 == 0) 
+		{
+			for (int k = 0; k < 6; k++)
+			{
+				frame_buffer[i][0][k] = glm::vec3(k / 6.0f, 0.0f, (5.0 - k) / 6.0f);
+			}
+		}
+		frame_buffer[i][i%8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
+	}
+
+	int cnt = 0;
+	int idx = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
@@ -528,10 +574,37 @@ int main()
 		lastFrame = currentFrame;
 		processInput(window);
 
+		if (cnt % 6 == 0)
+		{
+			//Clear frame buffer
+			for (int i = 0; i < 96; i++) {
+				for (int j = 0; j < 8; j++) {
+					for (int k = 0; k < 6; k++) {
+						frame_buffer[i][j][k] = glm::vec3(0.0f);
+					}
+				}
+			}
+
+			//Update framebuffer
+			for (int i = 0; i < 96; i++)
+			{
+				if (i % 6 == 0)
+				{
+					for (int k = 0; k < 6; k++)
+					{
+						frame_buffer[i][0][k] = glm::vec3(k / 6.0f, 0.0f, (5.0 - k) / 6.0f);
+					}
+				}
+				frame_buffer[i][(i + idx) % 8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
+			}
+			idx++;
+		}
+		cnt++;
+
 		//Rendering commands here
 		glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 
 		//Draw Models
 		ourShader.use();
@@ -550,7 +623,7 @@ int main()
 		ourShader.setVec3("material.specular", 0.50196078f, 0.50196078f, 0.50196078f);
 		ourShader.setFloat("material.shininess", 32.0f);
 
-		glm::mat4 projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 300.0f);
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		ourShader.setMat4("projection", projection);
@@ -559,9 +632,9 @@ int main()
 		glm::mat4 model = glm::mat4(1.0f);
 		float time = glfwGetTime();
 		//model = glm::rotate(model, glm::radians(5.0f * glfwGetTime()), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::rotate(model, (float)(0.5f * time), glm::vec3(0.0f, 1.0f, 0.0f));
+		//model = glm::rotate(model, (float)(0.5f * time), glm::vec3(0.0f, 1.0f, 0.0f));
 		//model = glm::translate(model, glm::vec3(0.0f, 4.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		//model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		ourShader.setMat4("model", model);
 		for (int i = 0; i < 3; i++)
 		{
@@ -569,13 +642,25 @@ int main()
 				enclosure_models[i].Draw(ourShader);
 			}
 			else {
+				/*
 				glm::mat4 model = glm::mat4(1.0f);
 				model = glm::translate(model, glm::vec3(0.0f, 7.45f, 0.0f));
 				model = glm::rotate(model, (float)(0.5f * time) + glm::radians(22.5f), glm::vec3(0.0f, 1.0f, 0.0f));
 				model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-				
-				
-				model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+
+
+				//model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+				ourShader.setMat4("model", model);
+				enclosure_models[i].Draw(ourShader);
+				*/
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(0.0f, 74.2f, 0.0f));
+				//model = glm::rotate(model, (float)(0.5f * time) + glm::radians(22.5f), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(22.5f), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+				//model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 				ourShader.setMat4("model", model);
 				enclosure_models[i].Draw(ourShader);
 			}
@@ -587,13 +672,34 @@ int main()
 		lightCubeShader.setMat4("view", view);
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+		//model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
 		lightCubeShader.setMat4("model", model);
 
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		
 
+		ledShader.use();
+		ledShader.setMat4("projection", projection);
+		ledShader.setMat4("view", view);
+		//ledShader.setVec3("ledColor", glm::vec3(0.5f, 0.0f, 1.0f));
+		for (int k = 0; k < 6; k++) {
+			for (int i = 0; i < 96; i++) {
+				for (int j = 0; j < 8; j++) {
+					if (glm::length(frame_buffer[i][j][k]) < 0.01)
+					{
+						continue;
+					}
+					ledShader.setVec3("ledColor", frame_buffer[i][j][k]);
+					model = glm::mat4(1.0f);
+					model = glm::rotate(model, glm::radians(3.75f * i), glm::vec3(0.0f, 1.0f, 0.0f));
+					model = glm::translate(model, glm::vec3(35.0f + j * 5.0f, 20.1f + 7.6*k, 0.0f));
+					model = glm::scale(model, glm::vec3(2.0f, 1.0f, 2.0f));
+					ledShader.setMat4("model", model);
+					glDrawArrays(GL_TRIANGLES, 0, 36);
+				}
+			}
+		}
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
