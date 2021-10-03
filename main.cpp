@@ -12,10 +12,13 @@
 #include <assimp/postprocess.h>
 #include <vector>
 #include <string>
+#include <thread>
+#include <stdint.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "filesystem.h"
+//#include "FrameBuffer.h"
 
 using namespace std;
 
@@ -296,10 +299,12 @@ unsigned int TextureFromFile(const char* path, const string& directory)
 }
 
 
-void framebuffser_size_callback(GLFWwindow* window, int width, int height)
-{
-	glViewport(0, 0, width, height);
-}
+//Globals
+bool mousePressed = false;
+float yaw_alt = 0.0f;//can go up to 360deg
+float pitch_alt = 0.0f;//-90 to 90 deg
+float cam_radius = 200.0f;
+static const float CAM_SPEED = 2.0f;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -308,6 +313,18 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
+float lastX = 400, lastY = 300;
+float pitch = 0.0f;
+float yaw = -90.0f;
+float fov = 45.0f;
+bool firstMouse = true;
+
+void framebuffser_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
+
 void processInput(GLFWwindow* window)
 {
 	const float cameraSpeed = 20.0f * deltaTime;
@@ -335,18 +352,30 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
 		lightPos.z += 0.5;
+		pitch_alt += CAM_SPEED;
+		if (pitch_alt > 85.0f)
+			pitch_alt = 85.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
 		lightPos.z -= 0.5;
+		pitch_alt -= CAM_SPEED;
+		if (pitch_alt < -85.0f)
+			pitch_alt = -85.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
 		lightPos.x += 0.5;
+		yaw_alt -= CAM_SPEED;
+		if (yaw_alt < 0.0f)
+			yaw_alt += 360.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
 		lightPos.x -= 0.5;
+		yaw_alt += CAM_SPEED;
+		if (yaw_alt > 360.0f)
+			yaw_alt -= 360.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
 	{
@@ -363,11 +392,9 @@ void processInput(GLFWwindow* window)
 	
 }
 
-float lastX = 400, lastY = 300;
-float pitch = 0.0f;
-float yaw = -90.0f;
-float fov = 45.0f;
-bool firstMouse = true;
+
+
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse)
@@ -407,6 +434,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	cameraFront = glm::normalize(front);
 
 	//printf("xoffset = %f, yoffset = %f\n", xoffset, yoffset);
+	if (mousePressed) 
+	{
+		yaw_alt -= xoffset;
+		if (yaw_alt < 0.0f)
+			yaw_alt += 360.0f;
+		else if (yaw_alt > 360.0f)
+			yaw_alt -= 360.0f;
+
+		pitch_alt -= yoffset;
+		if (pitch_alt > 85.0f)
+			pitch_alt = 85.0f;
+		else if (pitch_alt < -85.0f)
+			pitch_alt = -85.0f;
+	}
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -423,12 +464,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	else if (fov > 45.0f)
 		fov = 45.0f;
 }
-bool mousePressed = false;
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		mousePressed = (action == GLFW_PRESS);
-		printf("Mouse pressed: %d", mousePressed);
+		printf("Mouse pressed: %d\n", mousePressed);
 	}
 }
 
@@ -477,6 +518,16 @@ float vertices[] = {
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
 
+void thead_test(int sleep, bool *thread_running)
+{
+	int i = 0;
+	while (*thread_running)
+	{
+		printf("Hello %d\n", i++);
+		std::this_thread::sleep_for(1000ms);
+	}
+}
+
 int main()
 {
 	printf("Hello World\n");
@@ -505,7 +556,7 @@ int main()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//Set callback functions
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -565,6 +616,16 @@ int main()
 		frame_buffer[i][i%8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
 	}
 
+	//Setup framebuffer
+	//doubleBuffer arduino_buffer;
+	//arduino_buffer.clear();
+
+
+	//Start thread
+	bool thread_running = true;
+	thread th1(thead_test, 1000, &thread_running);
+
+
 	int cnt = 0;
 	int idx = 0;
 	while (!glfwWindowShouldClose(window))
@@ -584,6 +645,7 @@ int main()
 					}
 				}
 			}
+			//arduino_buffer.clear();
 
 			//Update framebuffer
 			for (int i = 0; i < 96; i++)
@@ -593,24 +655,50 @@ int main()
 					for (int k = 0; k < 6; k++)
 					{
 						frame_buffer[i][0][k] = glm::vec3(k / 6.0f, 0.0f, (5.0 - k) / 6.0f);
+						//arduino_buffer.setColors(i, 0, k, (255/6)*k, 0, (255/6) * (5 - k));
 					}
 				}
 				frame_buffer[i][(i + idx) % 8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
+				//arduino_buffer.setColors(i, (i + idx) % 8, 3, 0, 255, 0);
 			}
 			idx++;
 		}
 		cnt++;
+		//arduino_buffer.update();
 
 		//Rendering commands here
 		glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+		glm::vec3 box_pos = glm::vec3(1.0f, 0.0f, 0.0);
+		glm::vec4 box_vec = glm::vec4(box_pos, 1.0f);
+		glm::mat4 box_transform = glm::mat4(1.0f);
+		box_transform = glm::rotate(box_transform, glm::radians(yaw_alt), glm::vec3(0.0f, 1.0f, 0.0f));
+		box_vec = box_transform * box_vec;
+		//printf("x: %f, y: %f, z: %f\n", box_vec.x, box_vec.y, box_vec.z);
+		box_pos = glm::vec3(box_vec.x, box_vec.y, box_vec.z);
+		glm::vec3 axis = glm::cross(box_pos, glm::vec3(0.0f, 1.0f, 0.0f));
+		//printf("ax: %f, ay: %f, az: %f\n", axis.x, axis.y, axis.z);
+
+		box_transform = glm::mat4(1.0f);
+		box_transform = glm::rotate(box_transform, glm::radians(pitch_alt), axis);
+		box_vec = box_transform * box_vec;
+		//printf("x: %f, y: %f, z: %f\n", box_vec.x, box_vec.y, box_vec.z);
+		box_pos = cam_radius * glm::vec3(box_vec.x, box_vec.y, box_vec.z);
+		static bool first = true;
+		if (first) {
+			printf("box_pos = (%f, %f, %f)\n", box_pos.x, box_pos.y, box_pos.z);
+			first = false;
+		}
+		
+
 		//Draw Models
 		ourShader.use();
 
 		ourShader.setVec3("light.position", lightPos);
-		ourShader.setVec3("viewPos", cameraPos);
+		//ourShader.setVec3("viewPos", cameraPos);
+		ourShader.setVec3("viewPos", box_pos);
 
 		// light properties
 		ourShader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f); // note that all light colors are set at full intensity
@@ -624,7 +712,9 @@ int main()
 		ourShader.setFloat("material.shininess", 32.0f);
 
 		glm::mat4 projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 300.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		glm::mat4 view = glm::lookAt(box_pos, glm::vec3(0.0f, 20.0f, 0.0f), cameraUp);
+
 
 		ourShader.setMat4("projection", projection);
 		ourShader.setMat4("view", view);
@@ -678,6 +768,12 @@ int main()
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, box_pos);
+		//model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+		lightCubeShader.setMat4("model", model);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		ledShader.use();
 		ledShader.setMat4("projection", projection);
 		ledShader.setMat4("view", view);
@@ -685,11 +781,35 @@ int main()
 		for (int k = 0; k < 6; k++) {
 			for (int i = 0; i < 96; i++) {
 				for (int j = 0; j < 8; j++) {
+					
 					if (glm::length(frame_buffer[i][j][k]) < 0.01)
 					{
 						continue;
 					}
+					
+					/*
+					frameBuffer* rBuf = arduino_buffer.getReadBuffer();
+					int sum = 0;
+					glm::vec3 ledColor;
+					for (int idx = 0; idx < 3; idx++) {
+						sum += rBuf->fbuf_[i][j][k][idx];
+						switch (idx) {
+							case 0:
+								ledColor.x = rBuf->fbuf_[i][j][k][idx] / 255.0f;
+								break;
+							case 1:
+								ledColor.y = rBuf->fbuf_[i][j][k][idx] / 255.0f;
+								break;
+							case 2:
+								ledColor.z = rBuf->fbuf_[i][j][k][idx] / 255.0f;
+								break;
+						}
+					}
+					if (sum == 0)
+						continue;
+					*/
 					ledShader.setVec3("ledColor", frame_buffer[i][j][k]);
+					//ledShader.setVec3("ledColor", ledColor);
 					model = glm::mat4(1.0f);
 					model = glm::rotate(model, glm::radians(3.75f * i), glm::vec3(0.0f, 1.0f, 0.0f));
 					model = glm::translate(model, glm::vec3(35.0f + j * 5.0f, 20.1f + 7.6*k, 0.0f));
@@ -704,5 +824,7 @@ int main()
 		glfwPollEvents();
 	}
 	glfwTerminate();
+	thread_running = false;
+	th1.join();
 	return 0;
 }
