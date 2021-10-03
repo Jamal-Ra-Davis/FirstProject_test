@@ -18,7 +18,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "filesystem.h"
-//#include "FrameBuffer.h"
+#include "FrameBuffer.h"
 
 using namespace std;
 
@@ -617,8 +617,8 @@ int main()
 	}
 
 	//Setup framebuffer
-	//doubleBuffer arduino_buffer;
-	//arduino_buffer.clear();
+	doubleBuffer arduino_buffer;
+	arduino_buffer.clear();
 
 
 	//Start thread
@@ -637,15 +637,7 @@ int main()
 
 		if (cnt % 6 == 0)
 		{
-			//Clear frame buffer
-			for (int i = 0; i < 96; i++) {
-				for (int j = 0; j < 8; j++) {
-					for (int k = 0; k < 6; k++) {
-						frame_buffer[i][j][k] = glm::vec3(0.0f);
-					}
-				}
-			}
-			//arduino_buffer.clear();
+			arduino_buffer.clear();
 
 			//Update framebuffer
 			for (int i = 0; i < 96; i++)
@@ -654,17 +646,16 @@ int main()
 				{
 					for (int k = 0; k < 6; k++)
 					{
-						frame_buffer[i][0][k] = glm::vec3(k / 6.0f, 0.0f, (5.0 - k) / 6.0f);
-						//arduino_buffer.setColors(i, 0, k, (255/6)*k, 0, (255/6) * (5 - k));
+						arduino_buffer.setColors(i, 0, k, (255/6)*k, 0, (255/6) * (5 - k));
 					}
 				}
-				frame_buffer[i][(i + idx) % 8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
-				//arduino_buffer.setColors(i, (i + idx) % 8, 3, 0, 255, 0);
+				arduino_buffer.setColors(i, (i + idx) % 8, 3, 0, 255, 0);
 			}
 			idx++;
+			arduino_buffer.update();
 		}
 		cnt++;
-		//arduino_buffer.update();
+		
 
 		//Rendering commands here
 		glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
@@ -676,15 +667,12 @@ int main()
 		glm::mat4 box_transform = glm::mat4(1.0f);
 		box_transform = glm::rotate(box_transform, glm::radians(yaw_alt), glm::vec3(0.0f, 1.0f, 0.0f));
 		box_vec = box_transform * box_vec;
-		//printf("x: %f, y: %f, z: %f\n", box_vec.x, box_vec.y, box_vec.z);
 		box_pos = glm::vec3(box_vec.x, box_vec.y, box_vec.z);
 		glm::vec3 axis = glm::cross(box_pos, glm::vec3(0.0f, 1.0f, 0.0f));
-		//printf("ax: %f, ay: %f, az: %f\n", axis.x, axis.y, axis.z);
 
 		box_transform = glm::mat4(1.0f);
 		box_transform = glm::rotate(box_transform, glm::radians(pitch_alt), axis);
 		box_vec = box_transform * box_vec;
-		//printf("x: %f, y: %f, z: %f\n", box_vec.x, box_vec.y, box_vec.z);
 		box_pos = cam_radius * glm::vec3(box_vec.x, box_vec.y, box_vec.z);
 		static bool first = true;
 		if (first) {
@@ -768,26 +756,13 @@ int main()
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, box_pos);
-		//model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-		lightCubeShader.setMat4("model", model);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		ledShader.use();
 		ledShader.setMat4("projection", projection);
 		ledShader.setMat4("view", view);
-		//ledShader.setVec3("ledColor", glm::vec3(0.5f, 0.0f, 1.0f));
 		for (int k = 0; k < 6; k++) {
 			for (int i = 0; i < 96; i++) {
-				for (int j = 0; j < 8; j++) {
-					
-					if (glm::length(frame_buffer[i][j][k]) < 0.01)
-					{
-						continue;
-					}
-					
-					/*
+				for (int j = 0; j < 8; j++) {					
 					frameBuffer* rBuf = arduino_buffer.getReadBuffer();
 					int sum = 0;
 					glm::vec3 ledColor;
@@ -807,9 +782,8 @@ int main()
 					}
 					if (sum == 0)
 						continue;
-					*/
-					ledShader.setVec3("ledColor", frame_buffer[i][j][k]);
-					//ledShader.setVec3("ledColor", ledColor);
+					
+					ledShader.setVec3("ledColor", ledColor);
 					model = glm::mat4(1.0f);
 					model = glm::rotate(model, glm::radians(3.75f * i), glm::vec3(0.0f, 1.0f, 0.0f));
 					model = glm::translate(model, glm::vec3(35.0f + j * 5.0f, 20.1f + 7.6*k, 0.0f));
