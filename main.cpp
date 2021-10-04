@@ -518,6 +518,7 @@ float vertices[] = {
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
 
+
 void thead_test(int sleep, bool *thread_running)
 {
 	int i = 0;
@@ -528,9 +529,159 @@ void thead_test(int sleep, bool *thread_running)
 	}
 }
 
+class rtc_obj {
+	public:
+		rtc_obj() {}
+		int getSeconds();
+		int getMinutes();
+		int getHours() { return 8; }
+};
+int rtc_obj::getSeconds()
+{
+	int seconds = ((int)glfwGetTime()) % 60;
+	return seconds;
+}
+int rtc_obj::getMinutes()
+{
+	int seconds = ((int)glfwGetTime()) % 3600;
+	int minutes = seconds / 60;
+	return minutes;
+}
+
+
+rtc_obj rtc;
+void clock_test(doubleBuffer* frame_buffer)
+{
+	//Clock
+	int sec = rtc.getSeconds();
+	int min = rtc.getMinutes();
+	int hour = rtc.getHours() % 12;
+	static int h_off = 0;
+	static int h_up = 1;
+	static int h_inc = 0;
+
+	static const uint8_t delay_cnt = 5;
+	static uint8_t cnt = 0;
+
+	//Draw back plane
+	for (int i = 0; i < LENGTH; i++)
+	{
+		frame_buffer->setColors(i, WIDTH - 1, h_off, 255, 255, 255);
+		if (i % (LENGTH / 12) == 0)
+		{
+			frame_buffer->setColors(i, WIDTH - 2, h_off, 255, 255, 255);
+			frame_buffer->setColors(i, WIDTH - 3, h_off, 255, 255, 255);
+		}
+	}
+
+	//Draw Hands
+	for (int j = 0; j < WIDTH; j++)
+	{
+		//Draw sec hand
+		int sec_idx = (sec * LENGTH) / 60;
+		if (j <= WIDTH - 3)
+		{
+			frame_buffer->setColors(sec_idx, j, 1 + h_off, 0, 0, 255);
+		}
+
+		//Draw min hand
+		int min_idx = (min * LENGTH) / 60;
+		if (j <= WIDTH - 3)
+		{
+			frame_buffer->setColors(min_idx, j, 2 + h_off, 0, 255, 0);
+		}
+
+		//Draw hour hand
+		int hour_idx = (hour * LENGTH) / 12;
+		if (j <= WIDTH - 5)
+		{
+			frame_buffer->setColors(hour_idx, j, 3 + h_off, 255, 0, 0);
+		}
+	}
+
+	//Update logic
+	if (cnt++ % delay_cnt == 0)
+	{
+		h_inc++;
+		if ((h_inc % 77) == 0)
+		{
+			if (h_up)
+			{
+				h_off++;
+				if (h_off > 2)
+				{
+					h_off = 2;
+					h_up = 0;
+				}
+			}
+			else
+			{
+				h_off--;
+				if (h_off < 0)
+				{
+					h_off = 0;
+					h_up = 1;
+				}
+			}
+		}
+		//SERIAL_PRINTF(SerialUSB, "%02d:%02d:%02d\n", hour, min, sec);
+	}
+}
+void main_exec(doubleBuffer* frame_buffer)
+{
+	const static int TICK_PERIOD = 19;
+	static int idx = 0;
+	//Update framebuffer
+	for (int i = 0; i < 96; i++)
+	{
+		if (i % 6 == 0)
+		{
+			for (int k = 0; k < 6; k++)
+			{
+				frame_buffer->setColors(i, 0, k, (255 / 6) * k, 0, (255 / 6) * (5 - k));
+			}
+		}
+		frame_buffer->setColors(i, (i + idx/TICK_PERIOD) % 8, 3, 0, 255, 0);
+		
+	}
+	frame_buffer->setColors((idx/TICK_PERIOD) % 96, 7, 3, 255, 0, 0);
+	idx++;
+}
+#define TICK_DELAY 4ms
+float prev_thread_time = 0;
+void superLoop(bool* thread_running, doubleBuffer *frame_buffer)
+{
+	while (*thread_running)
+	{
+		float curr_thread_time = glfwGetTime();
+		//printf("Thread time: %f ms\n", (curr_thread_time - prev_thread_time) * 1000);
+		prev_thread_time = curr_thread_time;
+
+		//long tick_start = millis();
+		//processSerialCommands();
+		frame_buffer->clear();
+
+
+		//main_exec(frame_buffer);//exec function responsible for managing event buffer
+		clock_test(frame_buffer);
+
+		frame_buffer->update();
+		//std::this_thread::sleep_for(TICK_DELAY);
+		while (((glfwGetTime() - curr_thread_time) < 0.005) && *thread_running);
+	}
+}
+
 int main()
 {
 	printf("Hello World\n");
+
+	//Setup framebuffer
+	doubleBuffer arduino_buffer;
+	arduino_buffer.clear();
+
+	//Start thread
+	bool thread_running = true;
+	thread th1(superLoop, &thread_running, &arduino_buffer);
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -616,25 +767,23 @@ int main()
 		frame_buffer[i][i%8][3] = glm::vec3(0.0f, 1.0f, 0.2f);
 	}
 
-	//Setup framebuffer
-	doubleBuffer arduino_buffer;
-	arduino_buffer.clear();
-
-
-	//Start thread
-	bool thread_running = true;
-	thread th1(thead_test, 1000, &thread_running);
-
+	
+	//thread th1(thead_test, 1000, &thread_running);
 
 	int cnt = 0;
 	int idx = 0;
+
+	float deltaTime2 = 0;
+	float lastFrame2 = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		processInput(window);
-
+		//printf("Delta: %fms\n", deltaTime * 1000);
+		
+		/*
 		if (cnt % 6 == 0)
 		{
 			arduino_buffer.clear();
@@ -653,9 +802,13 @@ int main()
 			}
 			idx++;
 			arduino_buffer.update();
+			currentFrame = glfwGetTime();
+			deltaTime2 = currentFrame - lastFrame2;
+			lastFrame2 = currentFrame;
+			printf("Delta: %fms\n", deltaTime2 * 1000);
 		}
 		cnt++;
-		
+		*/
 
 		//Rendering commands here
 		glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
@@ -785,7 +938,7 @@ int main()
 					
 					ledShader.setVec3("ledColor", ledColor);
 					model = glm::mat4(1.0f);
-					model = glm::rotate(model, glm::radians(3.75f * i), glm::vec3(0.0f, 1.0f, 0.0f));
+					model = glm::rotate(model, glm::radians(3.75f * -i), glm::vec3(0.0f, 1.0f, 0.0f));
 					model = glm::translate(model, glm::vec3(35.0f + j * 5.0f, 20.1f + 7.6*k, 0.0f));
 					model = glm::scale(model, glm::vec3(2.0f, 1.0f, 2.0f));
 					ledShader.setMat4("model", model);
