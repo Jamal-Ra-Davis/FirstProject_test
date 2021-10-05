@@ -25,6 +25,10 @@ class Serial_Object {
         void println() { printf("\n"); }
 };
 Serial_Object Serial1;
+extern Serial_Object Serial1;
+
+Serial_Object SerialUSB;
+extern Serial_Object SerialUSB;
 #endif
 
 enum COLORS { RED, GREEN, BLUE, NUM_COLORS };
