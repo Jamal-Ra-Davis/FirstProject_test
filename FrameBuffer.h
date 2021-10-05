@@ -12,23 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-class Serial_Object {
-    public:
-        Serial_Object() {}
-        void print(const char* str) { printf("%s", str); }
-        void print(float val) { printf("%f", val); }
-        void print(int val) { printf("%d", val); }
-        void println(const char* str) { printf("%s\n", str); }
-        void println(float val) { printf("%f\n", val); }
-        void println(int val) { printf("%d\n", val); }
-        void println() { printf("\n"); }
-};
-Serial_Object Serial1;
-extern Serial_Object Serial1;
-
-Serial_Object SerialUSB;
-extern Serial_Object SerialUSB;
+#include "Arduino.h"
 #endif
 
 enum COLORS { RED, GREEN, BLUE, NUM_COLORS };

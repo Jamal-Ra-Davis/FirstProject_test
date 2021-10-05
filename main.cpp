@@ -346,53 +346,49 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		cameraPos += cameraSpeed * cameraFront;
+		pitch_alt += CAM_SPEED;
+		if (pitch_alt > 85.0f)
+			pitch_alt = 85.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		cameraPos -= cameraSpeed * cameraFront;
+		pitch_alt -= CAM_SPEED;
+		if (pitch_alt < -85.0f)
+			pitch_alt = -85.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		yaw_alt -= CAM_SPEED;
+		if (yaw_alt < 0.0f)
+			yaw_alt += 360.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		yaw_alt += CAM_SPEED;
+		if (yaw_alt > 360.0f)
+			yaw_alt -= 360.0f;
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
 		lightPos.z += 0.5;
-		pitch_alt += CAM_SPEED;
-		if (pitch_alt > 85.0f)
-			pitch_alt = 85.0f;
-		
-		button_state |= (1 << DUP);
+		button_state |= (1 << LBUMP);
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
 		lightPos.z -= 0.5;
-		pitch_alt -= CAM_SPEED;
-		if (pitch_alt < -85.0f)
-			pitch_alt = -85.0f;
-
-		button_state |= (1 << DDOWN);
+		button_state |= (1 << RBUMP);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
 		lightPos.x += 0.5;
-		yaw_alt -= CAM_SPEED;
-		if (yaw_alt < 0.0f)
-			yaw_alt += 360.0f;
-
 		button_state |= (1 << DLEFT);
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
 		lightPos.x -= 0.5;
-		yaw_alt += CAM_SPEED;
-		if (yaw_alt > 360.0f)
-			yaw_alt -= 360.0f;
-
 		button_state |= (1 << DRIGHT);
 	}
 	if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
@@ -406,6 +402,10 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 	{
 		printf("Light pos: (%f, %f, %f)\n", lightPos.x, lightPos.y, lightPos.z);
+	}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	{
+		button_state |= (1 << SQUARE);
 	}
 
     

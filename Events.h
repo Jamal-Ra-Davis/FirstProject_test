@@ -27,7 +27,7 @@ public:
     static Event createButtonEvent(EVENT t, uint8_t b);
     static Event createJoystickEvent(ABS_TYPE type, int16_t x, int16_t y, uint16_t angle, uint8_t mag);
     static Event createTriggerEvent(ABS_TYPE type, uint8_t trig);
-    //static void SerialParser();
+    static void SerialParser();
 };
 Event::Event(EVENT t, uint8_t b)
 {
@@ -66,9 +66,10 @@ extern RingBuf<Event, 32> eventBuffer;
 RingBuf<Event, 32> eventBuffer;
 char serialBuf[2];
 int ser_idx = 0;
-/*
+
 void Event::SerialParser()
 {
+#if PHYSICAL_DISPLAY
     while (Serial1.available())
     {
         char c = Serial1.read();
@@ -97,9 +98,10 @@ void Event::SerialParser()
             }
         }
     }
+#endif
 }
 
-
+/*
 void process_serial_commands(doubleBuffer* frame_buffer)
 {
     static RingBuf<char, 32> serialBuffer;

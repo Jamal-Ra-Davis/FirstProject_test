@@ -8,6 +8,7 @@
 #include "Shell.h"
 #include "Text.h"
 #include "test_animations.h"
+#include "Space_Game.h"
 
 #define TICK_DELAY 5
 #define PRINT_DELTA_TIME false
@@ -21,48 +22,17 @@ struct ThreadData {
 	bool thread_running;
 	SYSTEMTIME prev_thread_time;
 };
-class rtc_obj {
-public:
-	rtc_obj() {}
-	int getSeconds();
-	int getMinutes();
-	int getHours() { return 8; }
-};
-int rtc_obj::getSeconds()
-{
-	int seconds = ((int)glfwGetTime()) % 60;
-	return seconds;
-}
-int rtc_obj::getMinutes()
-{
-	int seconds = ((int)glfwGetTime()) % 3600;
-	int minutes = seconds / 60;
-	return minutes;
-}
-rtc_obj rtc;
 
-int64_t systime_to_timestamp(SYSTEMTIME *curr_time)
+pov_state_t exec_state;
+bool pov_state_change = true;
+int change_state(pov_state_t state)
 {
-	int64_t ts = (int64_t)curr_time->wMilliseconds +
-		(1000 * (int64_t)curr_time->wSecond) +
-		(60 * 1000 * (int64_t)curr_time->wMinute) +
-		(60 * 60 * 1000 * (int64_t)curr_time->wHour);
-	return ts;
-}
-void delay_ms(int ms) 
-{
-	SYSTEMTIME ts;
-	GetSystemTime(&ts);
-	
-	while (1)
+	if (exec_state != state)
 	{
-		SYSTEMTIME ts_new;
-		GetSystemTime(&ts_new);
-		int64_t delta = systime_to_timestamp(&ts_new) - systime_to_timestamp(&ts);
-
-		if (delta >= ms)
-			break;
+		exec_state = state;
+		pov_state_change = true;
 	}
+	return 0;
 }
 void delay_ms(int ms, bool *thread_running, SYSTEMTIME *ts)
 {
@@ -104,6 +74,7 @@ void thread_setup(struct ThreadData* thread_data, doubleBuffer* frame_buffer, st
 {
 	GetSystemTime(&thread_data->prev_thread_time);
 	frame_buffer->reset();
+	exec_state = SPACE_GAME;
 }
 
 void thread_loop(struct ThreadData* thread_data, doubleBuffer* frame_buffer, struct ButtonStatus* button_status)
@@ -117,16 +88,12 @@ void thread_loop(struct ThreadData* thread_data, doubleBuffer* frame_buffer, str
 			int64_t delta = systime_to_timestamp(&ts) - systime_to_timestamp(&thread_data->prev_thread_time);
 			printf("Delta time: %lld ms\n", delta);
 		}
-		
 		thread_data->prev_thread_time = ts;
 		
-
 		processEvents(button_status);
 		frame_buffer->clear();
 
-		//main_exec(frame_buffer);//exec function responsible for managing event buffer
-		//clock_test(frame_buffer);
-		test_exec(frame_buffer);
+		main_exec(frame_buffer);//exec function responsible for managing event buffer
 
 		frame_buffer->update();
 		delay_ms(TICK_DELAY, &thread_data->thread_running, &ts);
@@ -256,7 +223,7 @@ void test_exec(doubleBuffer* frame_buffer)
 		}
 	}
 }
-void main_exec(doubleBuffer* frame_buffer)
+void main_exec_(doubleBuffer* frame_buffer)
 {
 	const static int TICK_PERIOD = 19;
 	static int idx = 0;
@@ -275,4 +242,35 @@ void main_exec(doubleBuffer* frame_buffer)
 	}
 	frame_buffer->setColors((idx / TICK_PERIOD) % 96, 7, 3, 255, 0, 0);
 	idx++;
+}
+
+SpaceGame space_game;
+void main_exec(doubleBuffer* frame_buffer)
+{
+	switch (exec_state)
+	{
+		case POV_SCRATCH_LOOP:
+			//scratch_loop();
+			break;
+		case POV_TEST:
+			//test_exec(frame_buffer);
+			//textAnimation(frame_buffer);
+			//pinWheelAnimation_0(frame_buffer);
+			vortexAnimation(frame_buffer);
+			//pulseAnimation(frame_buffer);
+			break;
+		case DS4_TEST:
+			//ds4_test();
+			//ds4_analog_test();
+			break;
+		case SPACE_GAME:
+			space_game.update();
+			space_game.draw(frame_buffer);
+			break;
+		case CLOCK_DISPLAY:
+			clock_test(frame_buffer);
+			break;
+		default:
+			break;
+	}
 }

@@ -12,47 +12,7 @@
 #else
 #include <Windows.h>
 #include <stdint.h>
-void delayMicroseconds(int us)
-{
-    int x = 14;
-    for (int i = 0; i < us; i++) 
-    {
-        for (int j = 0; j < 500; j++)
-        {
-            int y = 7;
-            int z = 31;
-            y = y + z;
-            z = z - y + 50;
-            x += y * y - 5 * z;
-        }
-    }
-    int q = x / 7;
-}
-void delay(int ms)
-{
-    SYSTEMTIME curr_time;
-    GetSystemTime(&curr_time);
-    int64_t curr = (int64_t)curr_time.wMilliseconds +
-        (1000 * (int64_t)curr_time.wSecond) +
-        (60 * 1000 * (int64_t)curr_time.wMinute) +
-        (60 * 60 * 1000 * (int64_t)curr_time.wHour);
-
-    while (1) 
-    {
-        SYSTEMTIME new_time;
-        GetSystemTime(&new_time);
-
-        int64_t new_ts = (int64_t)new_time.wMilliseconds +
-            (1000 * (int64_t)new_time.wSecond) +
-            (60 * 1000 * (int64_t)new_time.wMinute) +
-            (60 * 60 * 1000 * (int64_t)new_time.wHour);
-
-        if ((new_ts - curr) > ms)
-        {
-            break;
-        }
-    }
-}
+#include "Arduino.h"
 #endif
 
 void textAnimation(doubleBuffer* frame_buffer)
