@@ -1,7 +1,8 @@
 #ifndef TEXT_LIB
 #define TEXT_LIB
 
-#include "FrameBuffer.h"
+//#include "FrameBuffer.h"
+#include <pov_display/FrameBuffer.h>
 #include <string.h>
 #define CHAR_WIDTH 8
 

@@ -1,6 +1,8 @@
 #pragma once
 #include <Windows.h>
 #include <stdint.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 class Serial_Object {
 public:
@@ -12,6 +14,9 @@ public:
 	void println(float val) { printf("%f\n", val); }
 	void println(int val) { printf("%d\n", val); }
 	void println() { printf("\n"); }
+	bool available() { return false; }
+	char read() { return '\0'; }
+	int parseInt() { return 0; }
 };
 Serial_Object Serial1;
 extern Serial_Object Serial1;

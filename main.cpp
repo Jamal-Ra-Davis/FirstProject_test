@@ -18,8 +18,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "filesystem.h"
-#include "FrameBuffer.h"
-#include "ThreadMain.h"
+#include "POV_Thread.h"
+#include <pov_display/FrameBuffer.h>
+
 
 #include <time.h>
 #ifdef _WIN32
@@ -374,12 +375,12 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
 		lightPos.z += 0.5;
-		button_state |= (1 << LBUMP);
+		button_state |= (1 << DUP);
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
 		lightPos.z -= 0.5;
-		button_state |= (1 << RBUMP);
+		button_state |= (1 << DDOWN);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
@@ -394,20 +395,42 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
 	{
 		lightPos.y += 0.5;
+		button_state |= (1 << RBUMP);
 	}
 	if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS)
 	{
 		lightPos.y -= 0.5;
+		button_state |= (1 << LBUMP);
 	}
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 	{
 		printf("Light pos: (%f, %f, %f)\n", lightPos.x, lightPos.y, lightPos.z);
+		button_state |= (1 << OPTIONS);
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+	{
+		button_state |= (1 << SHARE);
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		button_state |= (1 << SQUARE);
 	}
-
+	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+	{
+		button_state |= (1 << SQUARE);
+	}
+	if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+	{
+		button_state |= (1 << CROSS);
+	}
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+	{
+		button_state |= (1 << TRIANGLE);
+	}
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
+	{
+		button_state |= (1 << CIRCLE);
+	}
     
 	for (int i = 0; i < NUM_KEYS; i++)
 	{
@@ -742,9 +765,9 @@ int main()
 		ledShader.use();
 		ledShader.setMat4("projection", projection);
 		ledShader.setMat4("view", view);
-		for (int k = 0; k < 6; k++) {
-			for (int i = 0; i < 96; i++) {
-				for (int j = 0; j < 8; j++) {					
+		for (int k = 0; k < HEIGHT; k++) {
+			for (int i = 0; i < LENGTH; i++) {
+				for (int j = 0; j < WIDTH; j++) {
 					frameBuffer* rBuf = arduino_buffer.getReadBuffer();
 					int sum = 0;
 					glm::vec3 ledColor;

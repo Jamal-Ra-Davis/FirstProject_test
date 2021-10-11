@@ -3,12 +3,23 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "FrameBuffer.h"
-#include "Events.h"
+#include "Arduino.h"
 #include "Shell.h"
-#include "Text.h"
-#include "test_animations.h"
-#include "Space_Game.h"
+#include "RingBuf.h"		//Including here to avoid Events.h from including external RingBuf lib, but want to figure out a more graceful way
+#include <pov_display/Color.h>
+//#include "FrameBuffer.h"
+#include <pov_display/FrameBuffer.h>
+//#include "Events.h"
+#include <pov_display/Events.h>
+
+//#include "Text.h"
+#include <pov_display/Text.h>
+//#include "test_animations.h"
+#include <pov_display/test_animations.h>
+//#include "Space_Game.h"
+#include <pov_display/Space_Game.h>
+#include <pov_display/Main.h>
+
 
 #define TICK_DELAY 5
 #define PRINT_DELTA_TIME false
@@ -23,6 +34,7 @@ struct ThreadData {
 	SYSTEMTIME prev_thread_time;
 };
 
+/*
 pov_state_t exec_state;
 bool pov_state_change = true;
 int change_state(pov_state_t state)
@@ -34,6 +46,7 @@ int change_state(pov_state_t state)
 	}
 	return 0;
 }
+*/
 void delay_ms(int ms, bool *thread_running, SYSTEMTIME *ts)
 {
 	while (1)
@@ -65,7 +78,7 @@ void processEvents(struct ButtonStatus *button_status)
 		else if (button_status->button_events[i] == ButtonStatus::BTN_RELEASE)
 		{
 			eventBuffer.push(Event(Event::ON_RELEASE, i));
-			printf("Button Pressed: %d\n", i);
+			printf("Button Released: %d\n", i);
 		}
 		button_status->button_events[i] = ButtonStatus::BTN_NONE;
 	}
@@ -73,8 +86,13 @@ void processEvents(struct ButtonStatus *button_status)
 void thread_setup(struct ThreadData* thread_data, doubleBuffer* frame_buffer, struct ButtonStatus *button_status)
 {
 	GetSystemTime(&thread_data->prev_thread_time);
+	/*
 	frame_buffer->reset();
 	exec_state = SPACE_GAME;
+	Color c = Color::getColorHSV(200, 255, 255);
+	printf("Test color = (%d, %d, %d)\n", c.r, c.g, c.b);
+	*/
+	main_setup(frame_buffer);
 }
 
 void thread_loop(struct ThreadData* thread_data, doubleBuffer* frame_buffer, struct ButtonStatus* button_status)
@@ -102,14 +120,14 @@ void thread_loop(struct ThreadData* thread_data, doubleBuffer* frame_buffer, str
 
 void thread_main(struct ThreadData *thread_data, doubleBuffer* frame_buffer, struct ButtonStatus* button_status)
 {
-	thread_setup(thread_data, frame_buffer, button_status);
-	thread_loop(thread_data, frame_buffer, button_status);
+	thread_setup(thread_data, frame_buffer, button_status);//Equivalent of arduino setup()
+	thread_loop(thread_data, frame_buffer, button_status);//Equivalent of superLoop()
 }
 
 
 
 
-
+/*
 void clock_test(doubleBuffer* frame_buffer)
 {
 	//Clock
@@ -187,6 +205,8 @@ void clock_test(doubleBuffer* frame_buffer)
 		//SERIAL_PRINTF(SerialUSB, "%02d:%02d:%02d\n", hour, min, sec);
 	}
 }
+*/
+/*
 void test_exec(doubleBuffer* frame_buffer)
 {
 	static const uint8_t delay_cnt = 10;
@@ -223,6 +243,8 @@ void test_exec(doubleBuffer* frame_buffer)
 		}
 	}
 }
+*/
+/*
 void main_exec_(doubleBuffer* frame_buffer)
 {
 	const static int TICK_PERIOD = 19;
@@ -243,7 +265,8 @@ void main_exec_(doubleBuffer* frame_buffer)
 	frame_buffer->setColors((idx / TICK_PERIOD) % 96, 7, 3, 255, 0, 0);
 	idx++;
 }
-
+*/
+/*
 SpaceGame space_game;
 void main_exec(doubleBuffer* frame_buffer)
 {
@@ -274,3 +297,4 @@ void main_exec(doubleBuffer* frame_buffer)
 			break;
 	}
 }
+*/

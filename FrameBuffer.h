@@ -1,18 +1,15 @@
 #ifndef FRAME_BUFFER_LIB
 #define FRAME_BUFFER_LIB
 
-#define PHYSICAL_DISPLAY 0
-
 #include "Vector3d.h"
 
-#if PHYSICAL_DISPLAY
-#include<FastLED.h>
-#else 
-#include <stdint.h>
+#ifdef CONFIG_POV_SIMULATOR
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "Arduino.h"
+#else
+#include<FastLED.h>
 #endif
 
 enum COLORS { RED, GREEN, BLUE, NUM_COLORS };

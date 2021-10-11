@@ -2,8 +2,10 @@
 #define SPACE_GAME_LIB
 
 #include "Vector3d.h"
-#include "FrameBuffer.h"
-#include "Events.h"
+//#include "FrameBuffer.h"
+#include <pov_display/FrameBuffer.h>
+//#include "Events.h"
+#include <pov_display/Events.h>
 #include "Shell.h"
 
 class Bullet

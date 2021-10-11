@@ -1,10 +1,12 @@
 #ifndef TEST_ANI_LIB
 #define TEST_ANI_LIB
 
-#include "FrameBuffer.h"
+//#include "FrameBuffer.h"
+#include <pov_display/FrameBuffer.h>
 #include "Vector3d.h"
 #include "Text.h"
-#include "Events.h"
+//#include "Events.h"
+#include <pov_display/Events.h>
 
 #define PHYSICAL_DISPLAY 0
 #if PHYSICAL_DISPLAY
@@ -1200,6 +1202,41 @@ int MazeGame::handleInputs()
         }
     }
     return 0;
+}
+
+void rainbow_swirl(doubleBuffer* frame_buffer)
+{
+    static const int width_offset = 60 / (WIDTH - 1);
+    static const uint8_t height_transform[15] = { 2, 4, 4, 5, 5, 5, 5, 4, 4, 3, 2, 1, 1, 1, 1 };
+    static const uint8_t trans_size = 15;
+    static const uint8_t delay_cycles = 6;
+
+    static int hue_offset = 0;
+    static uint8_t delay_cnt = 0;
+    
+    for (int i = 0; i < LENGTH; i++)
+    {
+        int hue = (i * 255) / LENGTH;
+        int k = 0;
+        if ((i >= 20) && i < (20 + trans_size))
+        {
+            int idx = i - 20;//i from 0 to trans_size - 1
+            k = height_transform[trans_size - 1 - idx];
+        }
+
+        for (int j = 0; j < WIDTH; j++)
+        {
+            Color color = Color::getColorHSV(hue + hue_offset + ((WIDTH - 1 - j) * width_offset), 255, 255);
+            frame_buffer->setColors(i, j, k, color.r, color.g, color.b);
+        }
+    }
+
+    delay_cnt++;
+    if (delay_cnt % delay_cycles == 0)
+    {
+        hue_offset += 3;
+        delay_cnt = 0;
+    }
 }
 #endif
 //#endif
