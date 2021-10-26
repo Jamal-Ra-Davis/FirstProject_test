@@ -55,12 +55,15 @@ void processEvents(struct ButtonStatus *button_status)
 		{
 			eventBuffer.push(Event(Event::ON_PRESS, i));
 			printf("Button Pressed: %d\n", i);
+			printf("Event buffer size = %d\n", eventBuffer.size());
 		}
 		else if (button_status->button_events[i] == ButtonStatus::BTN_RELEASE)
 		{
 			eventBuffer.push(Event(Event::ON_RELEASE, i));
 			printf("Button Released: %d\n", i);
+			printf("Event buffer size = %d\n", eventBuffer.size());
 		}
+		
 		button_status->button_events[i] = ButtonStatus::BTN_NONE;
 	}
 }

@@ -333,7 +333,7 @@ void framebuffser_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-
+bool enclosure_top_visible = true;
 struct ButtonStatus button_status;
 void processInput(GLFWwindow* window)
 {
@@ -407,7 +407,7 @@ void processInput(GLFWwindow* window)
 		printf("Light pos: (%f, %f, %f)\n", lightPos.x, lightPos.y, lightPos.z);
 		button_state |= (1 << OPTIONS);
 	}
-	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
 	{
 		button_state |= (1 << SHARE);
 	}
@@ -430,6 +430,14 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
 	{
 		button_state |= (1 << CIRCLE);
+	}
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+	{
+		enclosure_top_visible = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+	{
+		enclosure_top_visible = false;
 	}
     
 	for (int i = 0; i < NUM_KEYS; i++)
@@ -724,7 +732,7 @@ int main()
 			if (i != 2) {
 				enclosure_models[i].Draw(ourShader);
 			}
-			else {
+			else if (enclosure_top_visible) {
 				/*
 				glm::mat4 model = glm::mat4(1.0f);
 				model = glm::translate(model, glm::vec3(0.0f, 7.45f, 0.0f));
